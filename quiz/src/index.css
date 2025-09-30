@@ -4,5 +4,6 @@
 :root {
   --background: #171719;
   --text-primary: #f1f1f1;
-  --accent: #fbbf24; /* contoh amber-400 */
+  --accent: #fbbf24;
+  --border-white: #f1f1f1; /* contoh amber-400 */
 }

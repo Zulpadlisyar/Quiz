@@ -15,4 +15,14 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    port: 5173, // default vite
+    proxy: {
+      "/api": {
+        target: "http://localhost:5000", // backend
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
 });
