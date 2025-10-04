@@ -1,14 +1,14 @@
 import React, { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "../components/ui/select";
 
 const Dashboard = ({ onStartQuiz, onViewHistory }) => {
   const [username, setUsername] = useState("");
@@ -17,14 +17,28 @@ const Dashboard = ({ onStartQuiz, onViewHistory }) => {
   const [level, setLevel] = useState("");
   const [jumlahSoal, setJumlahSoal] = useState("");
 
-  const handleStartQuiz = () => {
-    onStartQuiz({
-      username,
-      materi,
-      waktu,
-      level,
-      jumlahSoal,
-    });
+  const handleStartQuiz = async () => {
+    try {
+      const response = await fetch("http://localhost:3001/generate-quiz", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ materi, level, jumlahSoal }),
+      });
+
+      const data = await response.json();
+      if (data.questions) {
+        onStartQuiz({
+          username,
+          materi,
+          waktu,
+          level,
+          jumlahSoal,
+          questions: data.questions, // kirim hasil ke halaman quiz
+        });
+      }
+    } catch (error) {
+      console.error("Gagal generate soal:", error);
+    }
   };
 
   return (

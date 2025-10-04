@@ -7,30 +7,34 @@ import History from "./pages/History";
 import Feedback from "./pages/Feedback";
 
 function App() {
-  const [currentView, setCurrentView] = useState("dashboard");
-  const [score, setScore] = useState(0);
-  const [quizSettings, setQuizSettings] = useState({});
+  const [currentView, setCurrentView] = useState("dashboard"); // tampilan aktif
+  const [score, setScore] = useState(0); // skor akhir quiz
+  const [quizSettings, setQuizSettings] = useState({}); // konfigurasi quiz
+  const [quizResult, setQuizResult] = useState({}); // detail hasil (benar/salah)
 
-  // Mulai Quiz
+  // 🚀 Mulai quiz
   const handleStartQuiz = (settings) => {
     setQuizSettings(settings);
     setCurrentView("question");
   };
 
-  // Submit jawaban dan hitung skor
-  const handleQuizSubmit = (calculatedScore) => {
-    setScore(calculatedScore);
+  // 🚀 Submit jawaban & hitung skor
+  const handleQuizSubmit = (result) => {
+    // result bisa bentuk { score, correctCount, totalQuestions }
+    setScore(result.score);
+    setQuizResult(result);
     setCurrentView("score");
   };
 
-  // Kembali ke Dashboard
+  // 🚀 Kembali ke Dashboard
   const handleBackToHome = () => {
     setCurrentView("dashboard");
     setScore(0);
     setQuizSettings({});
+    setQuizResult({});
   };
 
-  // Navigasi lain
+  // 🚀 Navigasi lain
   const handleViewHistory = () => setCurrentView("history");
   const handleViewFeedback = () => setCurrentView("feedback");
 
@@ -45,12 +49,18 @@ function App() {
       )}
 
       {currentView === "question" && (
-        <Question quizSettings={quizSettings} onSubmit={handleQuizSubmit} />
+        <Question
+          quizSettings={quizSettings}
+          onSubmit={handleQuizSubmit}
+          onCancel={handleBackToHome}
+        />
       )}
 
       {currentView === "score" && (
         <Score
           score={score}
+          correctCount={quizResult.correctCount || 0}
+          totalQuestions={quizResult.totalQuestions || 0}
           onBack={handleBackToHome}
           onViewHistory={handleViewHistory}
         />
