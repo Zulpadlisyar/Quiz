@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../components/ui/select";
+import { useNavigate } from "react-router-dom";
 
 const Dashboard = ({ onStartQuiz, onViewHistory }) => {
   const [username, setUsername] = useState("");
@@ -16,136 +17,177 @@ const Dashboard = ({ onStartQuiz, onViewHistory }) => {
   const [waktu, setWaktu] = useState("");
   const [level, setLevel] = useState("");
   const [jumlahSoal, setJumlahSoal] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const navigate = useNavigate();
 
   const handleStartQuiz = async () => {
+    // Validasi input
+    if (!username || !materi || !waktu || !level || !jumlahSoal) {
+      alert("⚠️ Semua field wajib diisi!");
+      return;
+    }
+
+    setLoading(true);
+
     try {
       const response = await fetch("http://localhost:3001/generate-quiz", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ materi, level, jumlahSoal }),
+        body: JSON.stringify({
+          materi,
+          level,
+          jumlahSoal: Number(jumlahSoal),
+        }),
       });
 
-      const data = await response.json();
-      if (data.questions) {
-        onStartQuiz({
-          username,
-          materi,
-          waktu,
-          level,
-          jumlahSoal,
-          questions: data.questions, // kirim hasil ke halaman quiz
-        });
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || "Gagal menghasilkan soal dari server.");
       }
+
+      const data = await response.json();
+
+      // Validasi response
+      if (
+        !data.questions ||
+        !Array.isArray(data.questions) ||
+        data.questions.length === 0
+      ) {
+        throw new Error("Server tidak mengirimkan data soal yang valid.");
+      }
+
+      // Kirim data ke parent component
+      onStartQuiz({
+        username,
+        materi,
+        waktu,
+        level,
+        jumlahSoal,
+        questions: data.questions,
+      });
+
+      // Navigate ke halaman quiz
+      navigate("/quiz");
     } catch (error) {
-      console.error("Gagal generate soal:", error);
+      console.error("❌ Gagal generate soal:", error);
+      alert(
+        error.message ||
+          "Terjadi kesalahan saat menghasilkan soal. Pastikan server backend sudah berjalan."
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="bg-[var(--background)] min-h-screen flex flex-col items-center justify-center text-[var(--text-primary)] p-6 gap-6 relative">
-      {/* History Button - Top Right */}
+    <div className="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen flex flex-col items-center justify-center text-gray-800 p-6 gap-6 relative">
       <Button
         onClick={onViewHistory}
-        variant="white"
+        variant="outline"
         size="sm"
         className="absolute top-4 right-4"
       >
-        History
+        📜 History
       </Button>
 
-      {/* Title */}
-      <h1 className="text-3xl font-bold font-heading">Cakrawala</h1>
+      <div className="text-center mb-4">
+        <h1 className="text-4xl font-bold text-indigo-600 mb-2">
+          🌟 Cakrawala
+        </h1>
+        <p className="text-gray-600">Platform Quiz Bahasa Indonesia</p>
+      </div>
 
-      {/* Username Input */}
+      {/* Username */}
       <div className="grid w-full max-w-sm gap-2">
-        <Label htmlFor="username" className="font-button">
+        <Label htmlFor="username" className="font-semibold">
           Username
         </Label>
         <Input
           type="text"
           id="username"
-          placeholder="Type here..."
+          placeholder="Ketik nama kamu..."
           value={username}
           onChange={(e) => setUsername(e.target.value)}
+          className="border-2 border-gray-300 focus:border-indigo-500"
         />
       </div>
 
-      {/* Form Grid */}
+      {/* Pilihan Materi, Waktu, Level, Jumlah Soal */}
       <div className="grid grid-cols-2 gap-4 w-full max-w-sm">
-        {/* Materi */}
         <div className="space-y-2">
-          <Label className="text-foreground text-sm">Materi</Label>
+          <Label className="font-semibold">Materi</Label>
           <Select value={materi} onValueChange={setMateri}>
-            <SelectTrigger>
+            <SelectTrigger className="border-2 border-gray-300">
               <SelectValue placeholder="Pilih materi" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="matematika">Matematika</SelectItem>
-              <SelectItem value="fisika">Fisika</SelectItem>
-              <SelectItem value="kimia">Kimia</SelectItem>
-              <SelectItem value="biologi">Biologi</SelectItem>
+              <SelectItem value="ejaan">📝 Ejaan</SelectItem>
+              <SelectItem value="tata bahasa">📚 Tata Bahasa</SelectItem>
+              <SelectItem value="kosakata">💬 Kosakata</SelectItem>
+              <SelectItem value="pemahaman teks">📖 Pemahaman Teks</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
-        {/* Waktu */}
         <div className="space-y-2">
-          <Label className="text-foreground text-sm">Waktu</Label>
+          <Label className="font-semibold">Waktu</Label>
           <Select value={waktu} onValueChange={setWaktu}>
-            <SelectTrigger>
+            <SelectTrigger className="border-2 border-gray-300">
               <SelectValue placeholder="Pilih waktu" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="30">30 Menit</SelectItem>
-              <SelectItem value="45">45 Menit</SelectItem>
-              <SelectItem value="60">60 Menit</SelectItem>
-              <SelectItem value="90">90 Menit</SelectItem>
+              <SelectItem value="30">⏱️ 30 Menit</SelectItem>
+              <SelectItem value="45">⏱️ 45 Menit</SelectItem>
+              <SelectItem value="60">⏱️ 60 Menit</SelectItem>
+              <SelectItem value="90">⏱️ 90 Menit</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
-        {/* Level */}
         <div className="space-y-2">
-          <Label className="text-foreground text-sm">Level</Label>
+          <Label className="font-semibold">Level</Label>
           <Select value={level} onValueChange={setLevel}>
-            <SelectTrigger>
+            <SelectTrigger className="border-2 border-gray-300">
               <SelectValue placeholder="Pilih level" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="mudah">Mudah</SelectItem>
-              <SelectItem value="sedang">Sedang</SelectItem>
-              <SelectItem value="sulit">Sulit</SelectItem>
+              <SelectItem value="mudah">😊 Mudah</SelectItem>
+              <SelectItem value="sedang">😐 Sedang</SelectItem>
+              <SelectItem value="sulit">😤 Sulit</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
-        {/* Jumlah Soal */}
         <div className="space-y-2">
-          <Label className="text-foreground text-sm">Jumlah Soal</Label>
+          <Label className="font-semibold">Jumlah Soal</Label>
           <Select value={jumlahSoal} onValueChange={setJumlahSoal}>
-            <SelectTrigger>
+            <SelectTrigger className="border-2 border-gray-300">
               <SelectValue placeholder="Pilih jumlah" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="5">5 Soal</SelectItem>
               <SelectItem value="10">10 Soal</SelectItem>
               <SelectItem value="20">20 Soal</SelectItem>
-              <SelectItem value="30">30 Soal</SelectItem>
-              <SelectItem value="50">50 Soal</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </div>
 
-      {/* Start Quiz Button */}
+      {/* Tombol Mulai */}
       <Button
         onClick={handleStartQuiz}
-        variant="white"
-        size="lg"
-        className="w-full max-w-sm"
-        disabled={!username || !materi || !waktu || !level || !jumlahSoal}
+        className="w-full max-w-sm bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-6 text-lg"
+        disabled={loading}
       >
-        Start Quiz
+        {loading ? "⏳ Menghasilkan Soal..." : "🚀 Mulai Quiz"}
       </Button>
+
+      {loading && (
+        <div className="text-sm text-gray-600 animate-pulse">
+          Sedang berkomunikasi dengan AI...
+        </div>
+      )}
     </div>
   );
 };

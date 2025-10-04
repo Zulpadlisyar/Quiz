@@ -1,75 +1,50 @@
-import "./App.css";
-import { useState } from "react";
+import React, { useState } from "react";
+import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
-import Question from "./pages/Question";
-import Score from "./pages/Score";
+import Quiz from "./pages/Quiz";
 import History from "./pages/History";
-import Feedback from "./pages/Feedback";
 
 function App() {
-  const [currentView, setCurrentView] = useState("dashboard"); // tampilan aktif
-  const [score, setScore] = useState(0); // skor akhir quiz
-  const [quizSettings, setQuizSettings] = useState({}); // konfigurasi quiz
-  const [quizResult, setQuizResult] = useState({}); // detail hasil (benar/salah)
+  const [quizData, setQuizData] = useState(null);
+  const [history, setHistory] = useState([]);
+  const navigate = useNavigate();
 
-  // 🚀 Mulai quiz
-  const handleStartQuiz = (settings) => {
-    setQuizSettings(settings);
-    setCurrentView("question");
+  const handleStartQuiz = (data) => {
+    setQuizData(data);
   };
 
-  // 🚀 Submit jawaban & hitung skor
-  const handleQuizSubmit = (result) => {
-    // result bisa bentuk { score, correctCount, totalQuestions }
-    setScore(result.score);
-    setQuizResult(result);
-    setCurrentView("score");
+  const handleFinishQuiz = (result) => {
+    const timestamp = new Date().toLocaleString("id-ID");
+    setHistory((prev) => [...prev, { ...result, timestamp }]);
   };
 
-  // 🚀 Kembali ke Dashboard
-  const handleBackToHome = () => {
-    setCurrentView("dashboard");
-    setScore(0);
-    setQuizSettings({});
-    setQuizResult({});
+  const handleViewHistory = () => {
+    navigate("/history");
   };
-
-  // 🚀 Navigasi lain
-  const handleViewHistory = () => setCurrentView("history");
-  const handleViewFeedback = () => setCurrentView("feedback");
 
   return (
-    <>
-      {currentView === "dashboard" && (
-        <Dashboard
-          onStartQuiz={handleStartQuiz}
-          onViewHistory={handleViewHistory}
-          onViewFeedback={handleViewFeedback}
-        />
-      )}
-
-      {currentView === "question" && (
-        <Question
-          quizSettings={quizSettings}
-          onSubmit={handleQuizSubmit}
-          onCancel={handleBackToHome}
-        />
-      )}
-
-      {currentView === "score" && (
-        <Score
-          score={score}
-          correctCount={quizResult.correctCount || 0}
-          totalQuestions={quizResult.totalQuestions || 0}
-          onBack={handleBackToHome}
-          onViewHistory={handleViewHistory}
-        />
-      )}
-
-      {currentView === "history" && <History onBack={handleBackToHome} />}
-
-      {currentView === "feedback" && <Feedback onBack={handleBackToHome} />}
-    </>
+    <Routes>
+      <Route
+        path="/"
+        element={
+          <Dashboard
+            onStartQuiz={handleStartQuiz}
+            onViewHistory={handleViewHistory}
+          />
+        }
+      />
+      <Route
+        path="/quiz"
+        element={
+          quizData ? (
+            <Quiz quizData={quizData} onFinish={handleFinishQuiz} />
+          ) : (
+            <Navigate to="/" replace />
+          )
+        }
+      />
+      <Route path="/history" element={<History history={history} />} />
+    </Routes>
   );
 }
 
